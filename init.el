@@ -47,7 +47,7 @@
       kept-old-versions 2   ;; Number of oldest versions to keep.
       delete-old-versions t ;; Don't ask to delete excess backup versions.
       backup-by-copying t)  ;; Copy all files, don't rename them.
-(setq backup-directory-alist '(("" . (concat (getenv "HOME" "/.emacs.d/backups")))))
+(setq backup-directory-alist '(("" . "/home/axel/.emacs.d/backups")))
 
 (package-initialize t)
 (setq package-enable-at-startup nil)
@@ -90,13 +90,16 @@
 
 (require 'calendar)
 
+(use-package undo-tree
+  :diminish undo-tree-mode)
+
 ;; smart-mode-line
 ;;
 (use-package smart-mode-line
   :ensure t)
 (use-package smart-mode-line-powerline-theme
   :ensure t
-  :requires 'smart-mode-line
+  :requires smart-mode-line
   :config (progn
           (sml/setup)
           (powerline-center-theme)))
@@ -163,7 +166,8 @@
 
 ;; company-go (local)
 ;;
-(use-package company-go)
+(use-package company-go
+  :ensure t)
 
 ;; C-M-e in minibuffer to enter mode  
 (use-package miniedit
@@ -213,21 +217,17 @@
 ;; Golang
 ;;
 (use-package go-mode
-  :ensure go-mode 
-  :requires (list company company-go)
-  :init
-  (progn
-    (if (get-process "gocode") nil (shell-command "gocode"))
-    (add-hook 'go-mode-hook (lambda ()
-                              (set (make-local-variable 'company-backends) '(company-go))
-                              (company-mode))))
+  :ensure t
+  :requires (company company-go)
   :config (progn
-            (setenv "GOPATH" "~/go")
-            (setenv "PATH" (concat (getenv "PATH") ":" "~/go/bin"))
-            (add-hook 'before-save-hook #'gofmt-before-save)
-            (add-hook 'go-mode-hook (lambda ()
-                                      (set (make-local-variable 'company-backends) '(company-go))
-                                      (company-mode)))))
+              (if (get-process "gocode") nil (shell-command "gocode"))
+              (setenv "GOPATH" (concat (getenv "HOME") "/go"))
+              (setenv "PATH" (concat (getenv "PATH") ":" (getenv "HOME") "/go/bin"))
+              (add-hook 'before-save-hook #'gofmt-before-save)
+              (add-hook 'go-mode-hook (lambda ()
+                                        (set (make-local-variable 'company-backends) '(company-go))
+                                        (local-set-key (kbd "M-.") 'godef-jump)
+                                        (company-mode)))))
 
 
 ;; Go + Flycheck
@@ -297,17 +297,22 @@
           (fic-mode)
           (turn-on-fic-mode)))
 
+;; keychain
+;;
+(use-package keychain-environment
+ :config (keychain-refresh-environment))
+
 ;; Magit for git
 ;;
 (use-package magit
   :ensure t
   :bind (("<f8>" . magit-status)))
+(setq magit-last-seen-setup-instructions "1.4.0")
 
 ;; Plantuml
 ;;
 ;(use-package plantuml-mode
 ;  :ensure t)
-
 
 (provide 'init)
 
