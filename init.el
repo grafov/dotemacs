@@ -90,6 +90,11 @@
 
 (require 'calendar)
 
+;; keychain
+;;
+(use-package keychain-environment
+ :config (keychain-refresh-environment))
+
 (use-package undo-tree
   :diminish undo-tree-mode)
 
@@ -191,8 +196,9 @@
                                         ;   (yas-global-mode 1)
                                          ;   )
  :config (progn
-           (add-to-list 'yas-prompt-functions 'shk-yas/helm-prompt)
+         ;  (add-to-list 'yas-prompt-functions 'shk-yas/helm-prompt)
            (yas-global-mode 1)))
+
 
 (defun shk-yas/helm-prompt (prompt choices &optional display-fn)
   "Use helm to select a snippet. Put this into `yas/prompt-functions.'"
@@ -297,10 +303,27 @@
           (fic-mode)
           (turn-on-fic-mode)))
 
-;; keychain
-;;
-(use-package keychain-environment
- :config (keychain-refresh-environment))
+(use-package restclient
+  :ensure t)
+
+(use-package web-beautify
+  :ensure t)
+
+(use-package slime
+  :ensure t
+  :config (add-hook 'css-mode-hook
+          (lambda ()
+            (define-key css-mode-map "\M-\C-x" 'slime-js-refresh-css)
+            (define-key css-mode-map "\C-c\C-r" 'slime-js-embed-css))))
+
+(use-package slime-company
+  :ensure t
+  :requires company)
+
+(use-package js2-mode  
+  :ensure t
+  :requires slime
+  :config (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode)))
 
 ;; Magit for git
 ;;
