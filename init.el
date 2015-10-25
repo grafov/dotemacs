@@ -32,9 +32,7 @@
   (normal-top-level-add-subdirs-to-load-path))
 
 ;; My additional files with specific configs
-;; TODO merge keybindings with main config
 (load-file (concat user-emacs-directory "init-locale.el"))
-(load-file (concat user-emacs-directory "init-keybindings.el"))
 (load-file (concat user-emacs-directory "init-my.el"))
  
 ;; Variables configured via UI
@@ -52,17 +50,25 @@
 (package-initialize t)
 (setq package-enable-at-startup nil)
 
-; Add package sources
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+                                        ; Add package sources
+(unless (assoc-default "elpa" package-archives)
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t))
 (unless (assoc-default "melpa" package-archives)
-  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
+(unless (assoc-default "marmalade" package-archives)
+  (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
   (package-refresh-contents))
 
 ;; install and load packages
 ;;
 (unless (package-installed-p 'use-package)
-   (package-install 'use-package))
-(require 'use-package)
+  (package-install 'use-package))
+
+(eval-when-compile
+  (require 'use-package))
+(require 'diminish)                ;; if you use :diminish
+(require 'bind-key)                ;; if you use any :bind variant
+
 (use-package auto-compile
    :ensure t)
 ;;   :init (auto-compile-on-load-mode))
@@ -113,6 +119,7 @@
 ;;
 (require 'edit-server)
 (edit-server-start)
+(server-start)
 
 ;; Helm
 ;;
@@ -135,7 +142,7 @@
   :requires (helm helm-projectile)
   :bind (("<f2>" . projectile-commander)
          ("<f12>" . projectile-commander)
-         ("C-x w" . helm-projectile-switch-project)
+         ("C-x p" . helm-projectile-switch-project)
          ("C-," . helm-projectile-switch-to-buffer))
   :config (progn
           (projectile-global-mode)
@@ -224,23 +231,36 @@
 ;;
 (use-package go-mode
   :ensure t
-  :requires (company company-go)
   :config (progn
               (if (get-process "gocode") nil (shell-command "gocode"))
               (setenv "GOPATH" (concat (getenv "HOME") "/go"))
+              (setenv "GOPATH" (concat (getenv "GOPATH") ":" (getenv "HOME") "/prj"))
               (setenv "PATH" (concat (getenv "PATH") ":" (getenv "HOME") "/go/bin"))
               (add-hook 'before-save-hook #'gofmt-before-save)
               (add-hook 'go-mode-hook (lambda ()
-                                        (set (make-local-variable 'company-backends) '(company-go))
+                                        (go-eldoc-setup)
+;;                                        (set (make-local-variable 'company-backends) '(company-go))
                                         (local-set-key (kbd "M-.") 'godef-jump)
-                                        (company-mode)))))
+                                        ))))
+                                        ;;                                        (company-mode)
+(load-file "/home/axel/go/src/golang.org/x/tools/cmd/oracle/oracle.el")
+(load-file "/home/axel/prj/my/go-playground/go-playground.el")
 
+(require 'go-complete)
+(add-hook 'completion-at-point-functions 'go-complete-at-point)
+
+
+;; (use-package go-projectile
+;;   :ensure t
+;;   :requires (projectile go-mode))
+
+(require 'go-projectile)
 
 ;; Go + Flycheck
 (use-package flycheck
   :ensure t)
-(add-to-list 'load-path "~/go/src/github.com/dougm/goflymake")
-(require 'go-flycheck)
+;(add-to-list 'load-path "~/go/src/github.com/dougm/goflymake")
+;(require 'go-flycheck)
 
 ;; Jedi for python
 ;;
@@ -292,8 +312,8 @@
   (progn
   (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
   (add-hook 'lisp-interaction-mode-hook 'turn-on-eldoc-mode)
-  (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
-  (add-hook 'go-mode-hook 'turn-on-eldoc-mode)))
+  (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)))
+
 
 ;; Mark fixme, todo etc
 ;;
@@ -336,6 +356,21 @@
 ;;
 ;(use-package plantuml-mode
 ;  :ensure t)
+
+;; override default keybindings
+(load-file (concat user-emacs-directory "init-keybindings.el"))
+
+(require 'org-notmuch)
+
+(use-package org-bullets
+  :ensure t
+  :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+
+;; (require 'org-projectile)
+;; (setq org-projectile:projects-file
+;;       "/home/axel/org/todo.org")
+;; (add-to-list 'org-capture-templates (org-projectile:project-todo-entry))
+;; ;(setq org-agenda-files (append org-agenda-files (org-projectile:todo-files)))
 
 (provide 'init)
 
